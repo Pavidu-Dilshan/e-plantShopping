@@ -1,46 +1,78 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeItem, updateQuantity } from './CreateSlice';
+import { removeItem, updateQuantity } from './CartSlice';
 import './CartItem.css';
 
 const CartItem = ({ onContinueShopping }) => {
   const cart = useSelector(state => state.cart.items);
   const dispatch = useDispatch();
 
+// Function to convert cost string to a number
+  const parseCost = (cost) => {
+    return parseFloat(cost.replace(/[^0-9.-]+/g, ''));
+  };
+
   // Calculate total amount for all products in the cart
   const calculateTotalAmount = () => {
-    return cart.reduce((total, item) => total + Number(item.cost.substring(1)) * item.quantity, 0);
- 
+    console.log('Cart items:', cart);
+    return cart.reduce((total, item) => {
+        const itemCost = parseCost(item.cost);
+        const itemQuantity = parseInt(item.quantity);
+  
+        // Check for valid numbers
+        if (isNaN(itemCost) || isNaN(itemQuantity)) {
+          console.error(`Invalid cost (${item.cost}) or quantity (${item.quantity}) for item ${item.name}`);
+          return total;
+        }
+        return total + (itemCost * itemQuantity);
+      }, 0).toFixed(2);
+
   };
 
   const handleContinueShopping = (e) => {
-    onContinueShopping(e);
-   
+       e.preventDefault();
+    if (onContinueShopping) onContinueShopping();
   };
 
 
 
   const handleIncrement = (item) => {
-    dispatch(updateQuantity({ name: item.name, quantity: item.quantity + 1 }));
+    const newQuantity = item.quantity + 1;
+    dispatch(updateQuantity({ name: item.name, quantity: newQuantity }));
   };
 
   const handleDecrement = (item) => {
-    dispatch(updateQuantity({ name: item.name, quantity: item.quantity - 1 }));
-   
+    if (item.quantity > 1) {
+      const newQuantity = item.quantity - 1;
+      dispatch(updateQuantity({ name: item.name, quantity: newQuantity }));
+    }
+
   };
 
   const handleRemove = (item) => {
-    dispatch(removeItem(item));
+      dispatch(removeItem(item));
   };
 
   // Calculate total cost based on quantity for an item
   const calculateTotalCost = (item) => {
-    return Number(item.cost.substring(1)) * item.quantity;
+    const itemCost = parseCost(item.cost);
+    const itemQuantity = parseInt(item.quantity);
+
+    if (isNaN(itemCost) || isNaN(itemQuantity)) {
+      console.error(`Invalid cost (${item.cost}) or quantity (${item.quantity}) for item ${item.name}`);
+      return '0.00';
+    }
+
+    return (itemCost * itemQuantity).toFixed(2);
+
+  };
+
+  const handleCheckoutShopping = (e) => {
+    alert('Functionality to be added for future reference');
   };
 
   return (
     <div className="cart-container">
-      <h2 style={{ color: 'black' }}>Total Plants : {cart.length}</h2>
       <h2 style={{ color: 'black' }}>Total Cart Amount: ${calculateTotalAmount()}</h2>
       <div>
         {cart.map(item => (
@@ -64,11 +96,10 @@ const CartItem = ({ onContinueShopping }) => {
       <div className="continue_shopping_btn">
         <button className="get-started-button" onClick={(e) => handleContinueShopping(e)}>Continue Shopping</button>
         <br />
-        <button className="get-started-button1">Checkout</button>
+        <button className="get-started-button1" onClick={(e) => handleCheckoutShopping(e)}>Checkout</button>
       </div>
     </div>
   );
 };
 
 export default CartItem;
-
